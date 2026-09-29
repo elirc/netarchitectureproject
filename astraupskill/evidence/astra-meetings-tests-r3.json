@@ -1,0 +1,28 @@
+{
+  "project": ".netarchitectureproject",
+  "id": "209d90f0603b",
+  "command": [
+    "C:/Users/Owner/Desktop/AstraOrganized2/astra-remaining-improvements/toolchains/dotnet8/dotnet.exe",
+    "test",
+    "Modules/Meetings/Tests/UnitTests/CompanyName.MyMeetings.Modules.Meetings.Domain.UnitTests.csproj",
+    "--no-restore",
+    "--nologo",
+    "--verbosity",
+    "minimal",
+    "/m:1",
+    "--logger",
+    "trx"
+  ],
+  "cwd": "C:\\Users\\Owner\\Desktop\\AstraOrganized2\\astra-remaining-improvements\\stage\\209d90f0603b\\modular-monolith-with-ddd\\src",
+  "environmentOverrides": {
+    "DOTNET_ROOT": "C:/Users/Owner/Desktop/AstraOrganized2/astra-remaining-improvements/toolchains/dotnet8"
+  },
+  "startedAt": "2026-09-19T22:44:53.284808+00:00",
+  "status": "complete",
+  "log": "astra-meetings-tests-r3.log",
+  "pid": 10052,
+  "exitCode": 0,
+  "passed": true,
+  "finishedAt": "2026-09-19T22:49:13.838125+00:00",
+  "elapsedSeconds": 260.55
+}
