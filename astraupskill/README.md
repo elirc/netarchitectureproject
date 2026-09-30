@@ -83,3 +83,7 @@ namespace CompanyName.MyMeetings.Modules.Meetings.Domain.UnitTests.Meetings
 ## Course navigation
 
 [README](README.md) / [01-CODEBASE-MAP](01-CODEBASE-MAP.md) / [02-CONCEPTS](02-CONCEPTS.md) / [03-WORKED-CHANGE](03-WORKED-CHANGE.md) / [04-TESTING-AND-DEBUGGING](04-TESTING-AND-DEBUGGING.md) / [05-PRACTICE](05-PRACTICE.md) / [06-SOLUTIONS-AND-REVIEW](06-SOLUTIONS-AND-REVIEW.md) / [07-TRACE-LAB](07-TRACE-LAB.md) / [VERIFICATION](VERIFICATION.md)
+
+## Advanced invariant engineering workshop
+
+[Continue with the advanced pack](advanced/README.md): command-to-aggregate diagrams, strict boundary worksheets, a disposable real-source failure lab, reflection diagnostics, independent domain-rule exercises, separate solutions, and an all-fields rejection rubric.
