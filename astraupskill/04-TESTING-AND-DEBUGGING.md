@@ -8,6 +8,27 @@ The change success case begins with an existing meeting and checks that a new, l
 
 When a test fails during setup, inspect group ownership and expiration before changing the interval rule. When reflection reports a missing type or method, compare the helper's fully qualified handler name with the application assembly. Await the returned Task so asynchronous domain exceptions are observed. The recorded successful command builds the relevant project references and runs the unit test assembly; earlier style failures remain separate failed attempts in the campaign history.
 
+## Run only what you are studying
+
+From `modular-monolith-with-ddd/src` with a .NET 8 SDK:
+
+```powershell
+dotnet test Modules/Meetings/Tests/UnitTests/CompanyName.MyMeetings.Modules.Meetings.Domain.UnitTests.csproj --filter "FullyQualifiedName~MeetingTermTests"                 # 3 cases: the value object alone
+dotnet test Modules/Meetings/Tests/UnitTests/CompanyName.MyMeetings.Modules.Meetings.Domain.UnitTests.csproj --filter "FullyQualifiedName~MeetingTermCommandHandlerTests"   # 5 cases: both handlers
+dotnet test Modules/Meetings/Tests/UnitTests/CompanyName.MyMeetings.Modules.Meetings.Domain.UnitTests.csproj                                                                  # 97 cases: the whole Meetings unit suite
+```
+
+| Test | Protects | Fails how, if broken |
+|---|---|---|
+| `CreateNewBetweenDates_WithPositiveDuration_PreservesBothBoundaries` | the value object keeps both dates | assertion on `StartDate`/`EndDate` |
+| `CreateNewBetweenDates_WithoutPositiveDuration_BreaksRule(0)` / `(-1)` | the rule rejects equal and reversed ends | no exception thrown, or a different `BrokenRule` type |
+| `CreateMeeting_MapsRequestedEndDateIntoAddedAggregate` | create handler mapping | see the warning below: with the rule in place, a reverted mapping **throws** before any assertion runs |
+| `CreateMeeting_InvalidDuration_DoesNotAddAggregate(0)` / `(-1)` | nothing reaches `AddAsync` after a rejected term | `DidNotReceive().AddAsync` fails |
+| `ChangeMeeting_MapsRequestedEndDateIntoExistingAggregate` | change handler mapping | same as the create mapping test |
+| `ChangeMeeting_InvalidDuration_PreservesExistingTerm` | the original term survives a rejected change | assertion on the original dates |
+
+**Read the failure output, not just the red count.** Because `MeetingTerm` now rejects `end <= start`, restoring the old `(TermStartDate, TermStartDate)` mapping makes the two mapping tests fail with an unexpected `BusinessRuleValidationException` from inside `InvokeHandler`. They do not fail on the `EndDate` assertion. The end-date assertion is the line that would catch the bug if someone also removed the rule.
+
 ## Source excerpt
 
 From [modular-monolith-with-ddd/src/Modules/Meetings/Tests/UnitTests/Meetings/MeetingTermCommandHandlerTests.cs](../modular-monolith-with-ddd/src/Modules/Meetings/Tests/UnitTests/Meetings/MeetingTermCommandHandlerTests.cs).

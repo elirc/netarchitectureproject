@@ -1,14 +1,36 @@
 # Predict the boundary and the side effects
 
-Exercise one: supply a command whose start is October first at nine and whose end is eleven. Trace the two values through the create handler and MeetingTerm factory. Identify the assertion that would fail if a developer accidentally restored the old start/start mapping. Explain why checking only the returned meeting identifier would be insufficient.
+Every exercise below is a prediction you write down first and then confirm. Run the commands from `modular-monolith-with-ddd/src` in a disposable branch or copy, and restore every edit with `git checkout -- .` when you finish. `Modules/Meetings/Tests/UnitTests/CompanyName.MyMeetings.Modules.Meetings.Domain.UnitTests.csproj` is abbreviated as `<UnitTests.csproj>`.
 
-Exercise two: change the end to nine, then to eight fifty-nine. Predict the exception type, broken rule, and number of repository additions for each request. Locate the point at which execution stops. Keep your explanation about the handler's repository call separate from any assumption about a database transaction.
+## Exercise 1 - Trace a valid create
 
-Exercise three: create a valid meeting, then attempt to change it to a zero-duration interval. Predict the aggregate's stored term after the exception. Explain how argument evaluation before ChangeMainAttributes makes this possible. What additional assertions would be needed before claiming every other attribute also remains unchanged?
+**Goal.** Supply a command whose start is October 1 at 09:00 and whose end is 11:00. Trace the two values through `CreateMeetingCommandHandler.Handle` (line 32) and `MeetingTerm.CreateNewBetweenDates` (`Domain/Meetings/MeetingTerm.cs:13-23`). Explain why checking only the returned meeting identifier would be insufficient. Then predict exactly *how* `CreateMeeting_MapsRequestedEndDateIntoAddedAggregate` fails if the handler goes back to the old `(TermStartDate, TermStartDate)` mapping. Is it an assertion failure or an exception?
 
-Exercise four: move validation from the value object into only the create handler. List the entry points that would no longer receive that protection. Then restore shared validation and remove the handler mapping corrections. Explain why valid requests would fail despite the invariant being correct.
+**Check.** Make that one-argument edit in `Application/Meetings/CreateMeeting/CreateMeetingCommandHandler.cs:32`, run `dotnet test <UnitTests.csproj> --filter "FullyQualifiedName~MeetingTermCommandHandlerTests"`, and read the failure message. Then restore the line.
 
-Exercise five: review the reflection helper. Find how it locates the application type, supplies constructor dependencies, invokes Handle, and awaits the result. Propose a clear failure message for a future handler rename without changing production accessibility.
+## Exercise 2 - Equal and reversed ends
+
+**Goal.** Change the end to 09:00, then to 08:59. For each request, predict the exception type, the broken rule, the number of `AddAsync` calls and the line where execution stops. Keep the handler's repository call separate from any assumption about a database transaction.
+
+**Check.** These are exactly the two cases of `CreateMeeting_InvalidDuration_DoesNotAddAggregate` (offsets `0` and `-1`) and of `CreateNewBetweenDates_WithoutPositiveDuration_BreaksRule`. Run `--filter "FullyQualifiedName~InvalidDuration|FullyQualifiedName~WithoutPositiveDuration"` and expect 4 passing cases.
+
+## Exercise 3 - A rejected change leaves the aggregate alone
+
+**Goal.** Create a valid meeting, then try to change it to a zero-duration interval. Predict the aggregate's stored term after the exception. Explain how evaluating the arguments before `ChangeMainAttributes` is entered makes this guarantee possible. Which additional assertions would you need before claiming that *every other* attribute is unchanged too?
+
+**Check.** `ChangeMeeting_InvalidDuration_PreservesExistingTerm` asserts only the two dates. Add assertions for one more field (the title is a private field read the same way `GetTerm` reads `_term`) and run the handler-test filter.
+
+## Exercise 4 - Validation in the wrong layer
+
+**Goal.** Suppose validation moved from the value object into the create handler only. List the entry points that would lose protection. Production code has exactly two callers of `MeetingTerm.CreateNewBetweenDates` (the two handlers). The existing test fixtures that build meetings are callers too. Next, suppose shared validation stays but the mapping corrections are removed. Explain why valid requests would now fail even though the invariant is correct.
+
+**Check.** Confirm the caller list yourself with a scoped search: `git grep -n "MeetingTerm.CreateNewBetweenDates" -- "modular-monolith-with-ddd/src/Modules/Meetings"`. For the second half, revert both handler lines and run the handler-test filter. Expect 2 failures: the two mapping tests. The three invalid-duration cases still pass, because they were designed to throw anyway.
+
+## Exercise 5 - Review the reflection helper
+
+**Goal.** In `MeetingTermCommandHandlerTests.cs`, find how `InvokeHandler` locates the internal type, supplies constructor dependencies, invokes `Handle` and awaits the result. Propose a clear failure message for a future handler rename or signature change, without changing production accessibility.
+
+**Check.** Change one character of a handler type-name string and run the filter. Note which exception you get and whether it names the type. Then rename `"Handle"` to `"Handl"` in one `GetMethod` call and compare. Restore both. Compare your conclusions with [06](06-SOLUTIONS-AND-REVIEW.md).
 
 ## Source excerpt
 

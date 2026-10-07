@@ -1,6 +1,6 @@
 # Interpret the unit test evidence
 
-The accepted command completed with ninety-seven passing unit tests and no failures or skips. The attached TRX gives machine-readable outcomes, while the command log shows the referenced assemblies built for the run. The selected target is the Meetings domain unit test project; its references include application and infrastructure assemblies needed by the existing suite.
+The accepted command completed with ninety-seven passing unit tests and no failures or skips. The attached [TRX](evidence/regression.trx) gives machine-readable per-test outcomes (`<Counters total="97" executed="97" passed="97" failed="0" …>`), and the [run record](evidence/astra-meetings-tests-r3.json) gives the command, exit code 0 and timing (2026-09-19, 260 s). The console log that the record names (`astra-meetings-tests-r3.log`) was not committed, so the build output cannot be re-inspected. The selected target is the Meetings domain unit test project; its references include application and infrastructure assemblies needed by the existing suite.
 
 The added tests cover exact positive interval preservation, equal and reversed interval rejection, both application handler mappings, prevention of repository addition after invalid creation, and preservation of the existing term after invalid modification. Reflection invokes the actual internal handlers, while repository and member-context substitutes isolate their dependencies.
 
@@ -8,48 +8,29 @@ No SQL integration suite was executed for this improvement. A project reference 
 
 Earlier attempts exposed source-style violations and were corrected before the accepted run. Long Windows paths also produced assembly-cache warnings in an earlier build attempt. The successful final command is the acceptance evidence; failed attempts remain in the working history. Original snapshots accompany changed source files, and the delivery process verifies their canonical hashes before copying. Reading these guides or passing software tests does not establish human mastery of the architectural concepts.
 
-## Source excerpt
+## How the 97 is made up
 
-From [modular-monolith-with-ddd/src/Modules/Meetings/Tests/UnitTests/Meetings/MeetingTermTests.cs](../modular-monolith-with-ddd/src/Modules/Meetings/Tests/UnitTests/Meetings/MeetingTermTests.cs).
+Counted from the attributes in `modular-monolith-with-ddd/src/Modules/Meetings/Tests/UnitTests/` and cross-checked against the TRX test names (2026-10-06):
 
-```cs
-using CompanyName.MyMeetings.BuildingBlocks.Domain;
-using CompanyName.MyMeetings.Modules.Meetings.Domain.Meetings;
-using CompanyName.MyMeetings.Modules.Meetings.Domain.Meetings.Rules;
-using FluentAssertions;
-using NUnit.Framework;
+| Source | Count |
+|---|---:|
+| `[Test]` attributes in the project | 90 |
+| …of which carry `[TestCase]` too (three `MeetingCommentTests` methods, `TestCase(null)` + `TestCase("")`), so each runs twice | +3 |
+| `[TestCase]`-only methods: `CreateNewBetweenDates_WithoutPositiveDuration_BreaksRule(0/-1)` and `CreateMeeting_InvalidDuration_DoesNotAddAggregate(0/-1)` | +4 |
+| **Total cases** | **97** |
 
-namespace CompanyName.MyMeetings.Modules.Meetings.Domain.UnitTests.Meetings
-{
-    [TestFixture]
-    public class MeetingTermTests
-    {
-        [Test]
-        public void CreateNewBetweenDates_WithPositiveDuration_PreservesBothBoundaries()
-        {
-            var start = new DateTime(2026, 10, 1, 9, 0, 0, DateTimeKind.Utc);
-            var end = start.AddHours(2);
+The eight new cases are `MeetingTermTests` (3: the preservation test plus the two-case rule test) and `MeetingTermCommandHandlerTests` (5: `CreateMeeting_MapsRequestedEndDateIntoAddedAggregate`, the two `CreateMeeting_InvalidDuration_DoesNotAddAggregate` cases, `ChangeMeeting_MapsRequestedEndDateIntoExistingAggregate`, `ChangeMeeting_InvalidDuration_PreservesExistingTerm`). The other 89 cases already existed.
 
-            var term = MeetingTerm.CreateNewBetweenDates(start, end);
+## Reproduce it
 
-            term.StartDate.Should().Be(start);
-            term.EndDate.Should().Be(end);
-        }
+The solution pins .NET 8 (`modular-monolith-with-ddd/global.json`, `src/Directory.Build.props:12`). The recorded run used a private .NET 8 toolchain from the original workstation. On your machine, any .NET 8 SDK works. From `modular-monolith-with-ddd/src`:
 
-        [TestCase(0)]
-        [TestCase(-1)]
-        public void CreateNewBetweenDates_WithoutPositiveDuration_BreaksRule(int endOffsetMinutes)
-        {
-            var start = new DateTime(2026, 10, 1, 9, 0, 0, DateTimeKind.Utc);
-
-            var exception = Assert.Throws<BusinessRuleValidationException>(() =>
-                MeetingTerm.CreateNewBetweenDates(start, start.AddMinutes(endOffsetMinutes)));
-
-            exception.BrokenRule.Should().BeOfType<MeetingTermMustEndAfterStartRule>();
-        }
-    }
-}
+```powershell
+dotnet test Modules/Meetings/Tests/UnitTests/CompanyName.MyMeetings.Modules.Meetings.Domain.UnitTests.csproj --logger trx
+dotnet test Modules/Meetings/Tests/UnitTests/CompanyName.MyMeetings.Modules.Meetings.Domain.UnitTests.csproj --filter "FullyQualifiedName~MeetingTerm"
 ```
+
+The first command should report 97 passed. The filtered run selects the eight new cases.
 
 ## Course navigation
 
@@ -61,6 +42,6 @@ The recorded test runs passed **97 tests**. The commands below define the verifi
 
 | Check | Recorded command | Exit | Evidence |
 |---|---|---:|---|
-| `astra-meetings-tests-r3` | `["C:/Users/Owner/Desktop/AstraOrganized2/astra-remaining-improvements/toolchains/dotnet8/dotnet.exe", "test", "Modules/Meetings/Tests/UnitTests/CompanyName.MyMeetings.Modules.Meetings.Domain.UnitTests.csproj", "--no-restore", "--nologo", "--verbosity", "minimal", "/m:1", "--logger", "trx"]` | 0 | [record](evidence/astra-meetings-tests-r3.json), [log](evidence/astra-meetings-tests-r3.log) |
+| `astra-meetings-tests-r3` | `dotnet test Modules/Meetings/Tests/UnitTests/CompanyName.MyMeetings.Modules.Meetings.Domain.UnitTests.csproj --no-restore --nologo --verbosity minimal /m:1 --logger trx` (run from `modular-monolith-with-ddd/src` with a workstation-local .NET 8 `dotnet.exe`; the absolute path is in the record) | 0 | [record](evidence/astra-meetings-tests-r3.json); log not committed |
 
 [Machine-readable results 1](evidence/regression.trx).

@@ -6,7 +6,7 @@ The repair has two parts. Both handlers now pass TermEndDate as the second argum
 
 Read the codebase map before running the exercises. Concepts explains strict interval ordering; the worked change follows the two argument mappings. Testing shows how the actual internal handlers are invoked without changing their production visibility. Practice asks you to predict repository and aggregate behavior, and the separate solutions explain those predictions.
 
-The accepted suite contains ninety-seven unit tests, including the added interval and handler cases. Repository substitutes keep this check local. It does not establish database transaction rollback, HTTP response formatting, or deployed scheduling behavior. Treat those as separate boundaries when extending the project. The original source snapshots and recorded command evidence accompany this course so the change can be reviewed against the prior implementation.
+The accepted run passed ninety-seven unit test cases. Eight of them are new: three in `MeetingTermTests` and five in `MeetingTermCommandHandlerTests` ([how the 97 is made up](VERIFICATION.md#how-the-97-is-made-up)). Repository substitutes keep this check local. It does not establish database transaction rollback, HTTP response formatting, or deployed scheduling behavior. Treat those as separate boundaries when extending the project. The original source snapshots and recorded command evidence accompany this course so the change can be reviewed against the prior implementation.
 
 ## Source excerpt
 
@@ -65,19 +65,8 @@ namespace CompanyName.MyMeetings.Modules.Meetings.Domain.UnitTests.Meetings
             fixture.MeetingRepository.DidNotReceive().AddAsync(Arg.Any<Meeting>());
         }
 
-        [Test]
-        public async Task ChangeMeeting_MapsRequestedEndDateIntoExistingAggregate()
-        {
-            var fixture = CreateFixture();
-            var original = fixture.Group.CreateMeeting(
-                "Original",
-                MeetingTerm.CreateNewBetweenDates(DateTime.UtcNow.AddDays(1), DateTime.UtcNow.AddDays(1).AddHours(1)),
-                "Description",
-                MeetingLocation.CreateNew("Room", "Street", "00-001", "City"),
-                null,
-                0,
-                Term.NoTerm,
-                MoneyValue.Undefined,
+        // ... ChangeMeeting_MapsRequestedEndDateIntoExistingAggregate, ChangeMeeting_InvalidDuration_PreservesExistingTerm
+        // and the reflection helpers follow in the full file.
 ```
 
 ## Course navigation

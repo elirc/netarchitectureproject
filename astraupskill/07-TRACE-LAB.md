@@ -6,7 +6,15 @@ Construct a change command starting three days from now with its end equal to it
 
 Mark the aggregate mutation call as not entered. Observe the rejected task through Assert.ThrowsAsync, then read the original aggregate again. Its dates should still equal the original values. The regression does not need a timing delay because the awaited task defines the completion boundary.
 
-Repeat the trace with an end four hours after the requested start. Construction succeeds, the aggregate method runs, and the new interval is retained. Finally, deliberately substitute TermStartDate for TermEndDate in a disposable copy and predict the valid-change test failure. This mutation demonstrates why the handler assertion protects the original bug rather than merely restating the new rule. Restore the correct mapping before accepting any evidence or packaging the project.
+Repeat the trace with an end four hours after the requested start. Construction succeeds, the aggregate method runs, and the new interval is retained. Finally, deliberately substitute TermStartDate for TermEndDate in the change handler (`ChangeMeetingMainAttributesCommandHandler.cs:24`) in a disposable copy, and predict the outcome before you run `dotnet test <UnitTests.csproj> --filter "FullyQualifiedName~MeetingTermCommandHandlerTests"`.
+
+| Test | Prediction with the rule still present |
+|---|---|
+| `ChangeMeeting_MapsRequestedEndDateIntoExistingAggregate` | **fails**, but with `BusinessRuleValidationException` thrown from the handler, not on the `EndDate` assertion: the start/start term is rejected first |
+| `ChangeMeeting_InvalidDuration_PreservesExistingTerm` | passes: its command was already start == start, so it throws exactly as designed |
+| the three create tests | pass: the create handler is untouched |
+
+Then, in the same disposable copy, also comment out the `CheckRule` line in `MeetingTerm`'s constructor (`Domain/Meetings/MeetingTerm.cs:20`). That recreates the original code. Now the mapping test reaches its assertions and fails on `EndDate`, and all three invalid-duration cases (`ChangeMeeting_InvalidDuration_PreservesExistingTerm` and both `CreateMeeting_InvalidDuration_DoesNotAddAggregate` cases) fail because nothing throws any more. Comparing the two runs shows what each layer's test protects. Restore both lines (`git checkout -- .`) before accepting any evidence.
 
 ## Source excerpt
 
